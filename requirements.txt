@@ -1,0 +1,12 @@
+numpy
+torch == 1.0.0
+torchvision
+argparse
+scipy
+opencv-python
+matplotlib
+imageio
+tqdm
+tensorboardX
+
+seaborn
