@@ -72,7 +72,7 @@ class CustomLoss(nn.Module):
         index = cos_theta.data * 0.0 #size=(B,Classnum)
         index.scatter_(1,target.data.view(-1,1),1)
         index = index.byte()
-        index = Variable(index)
+        index = Variable(index).to(torch.bool)
 
         self.lamb = max(self.LambdaMin,self.LambdaMax/(1+0.1*self.it ))
         output = cos_theta * 1.0 #size=(B,Classnum)

@@ -72,7 +72,7 @@ class CustomLoss(nn.Module):
         index = cos_theta.data * 0.0 #size=(B,Classnum)
         index.scatter_(1,target.data.view(-1,1),1)
         index = index.byte()
-        index = Variable(index)
+        index = Variable(index).to(torch.bool)
 
         self.lamb = max(self.LambdaMin,self.LambdaMax/(1+0.1*self.it ))
         output = cos_theta * 1.0 #size=(B,Classnum)
@@ -97,86 +97,145 @@ class CustomLoss(nn.Module):
 
 
 class faceNet(nn.Module):
-    def __init__(self,classnum=10574, feature=False, m = 1.35):
+    def __init__(self,classnum=10574, feature=False, m = 1):
         super(faceNet, self).__init__()
         self.classnum = classnum
         self.feature = feature
+        chs = [64, 128, 256, 512]
 
         self.conv1_1 = nn.Conv2d(3,64,3,2,1) #=>B*64*56*48
+        self.bn1_1   = nn.BatchNorm2d(chs[0])
         self.relu1_1 = nn.PReLU(64)
         self.conv1_2 = nn.Conv2d(64,64,3,1,1)
+        self.bn1_2   = nn.BatchNorm2d(chs[0])
         self.relu1_2 = nn.PReLU(64)
         self.conv1_3 = nn.Conv2d(64,64,3,1,1)
+        self.bn1_3   = nn.BatchNorm2d(chs[0])
         self.relu1_3 = nn.PReLU(64)
 
         self.conv2_1 = nn.Conv2d(64,128,3,2,1) #=>B*128*28*24
+        self.bn2_1   = nn.BatchNorm2d(chs[1])
         self.relu2_1 = nn.PReLU(128)
         self.conv2_2 = nn.Conv2d(128,128,3,1,1)
+        self.bn2_2   = nn.BatchNorm2d(chs[1])
         self.relu2_2 = nn.PReLU(128)
         self.conv2_3 = nn.Conv2d(128,128,3,1,1)
+        self.bn2_3   = nn.BatchNorm2d(chs[1])
         self.relu2_3 = nn.PReLU(128)
 
         self.conv2_4 = nn.Conv2d(128,128,3,1,1) #=>B*128*28*24
+        self.bn2_4   = nn.BatchNorm2d(chs[1])
         self.relu2_4 = nn.PReLU(128)
+        self.bn2_5   = nn.BatchNorm2d(chs[1])
         self.conv2_5 = nn.Conv2d(128,128,3,1,1)
         self.relu2_5 = nn.PReLU(128)
 
         self.conv3_1 = nn.Conv2d(128,256,3,2,1) #=>B*256*14*12
+        self.bn3_1   = nn.BatchNorm2d(chs[2])
         self.relu3_1 = nn.PReLU(256)
         self.conv3_2 = nn.Conv2d(256,256,3,1,1)
+        self.bn3_2   = nn.BatchNorm2d(chs[2])
         self.relu3_2 = nn.PReLU(256)
         self.conv3_3 = nn.Conv2d(256,256,3,1,1)
+        self.bn3_3   = nn.BatchNorm2d(chs[2])
         self.relu3_3 = nn.PReLU(256)
 
         self.conv3_4 = nn.Conv2d(256,256,3,1,1) #=>B*256*14*12
+        self.bn3_4   = nn.BatchNorm2d(chs[2])
         self.relu3_4 = nn.PReLU(256)
         self.conv3_5 = nn.Conv2d(256,256,3,1,1)
+        self.bn3_5   = nn.BatchNorm2d(chs[2])
         self.relu3_5 = nn.PReLU(256)
 
         self.conv3_6 = nn.Conv2d(256,256,3,1,1) #=>B*256*14*12
+        self.bn3_6   = nn.BatchNorm2d(chs[2])
         self.relu3_6 = nn.PReLU(256)
         self.conv3_7 = nn.Conv2d(256,256,3,1,1)
+        self.bn3_7   = nn.BatchNorm2d(chs[2])
         self.relu3_7 = nn.PReLU(256)
 
         self.conv3_8 = nn.Conv2d(256,256,3,1,1) #=>B*256*14*12
+        self.bn3_8   = nn.BatchNorm2d(chs[2])
         self.relu3_8 = nn.PReLU(256)
         self.conv3_9 = nn.Conv2d(256,256,3,1,1)
+        self.bn3_9   = nn.BatchNorm2d(chs[2])
         self.relu3_9 = nn.PReLU(256)
 
         self.conv4_1 = nn.Conv2d(256,512,3,2,1) #=>B*512*7*6
+        self.bn4_1   = nn.BatchNorm2d(chs[3])
         self.relu4_1 = nn.PReLU(512)
         self.conv4_2 = nn.Conv2d(512,512,3,1,1)
+        self.bn4_2   = nn.BatchNorm2d(chs[3])
         self.relu4_2 = nn.PReLU(512)
         self.conv4_3 = nn.Conv2d(512,512,3,1,1)
+        self.bn4_3   = nn.BatchNorm2d(chs[3])
         self.relu4_3 = nn.PReLU(512)
 
         self.fc5 = nn.Linear(512*7*6,512)
-        self.fc6 = CustomLinear(in_features = 512,
+        self.bn_5   = nn.BatchNorm1d(chs[3])
+        # self.fc6 = nn.Linear(512,512)
+        self.fc7 = CustomLinear(in_features = 512,
                 out_features = self.classnum, m=m)
 
 
-    def forward(self, x):
-        x = self.relu1_1(self.conv1_1(x))
-        x = x + self.relu1_3(self.conv1_3(self.relu1_2(self.conv1_2(x))))
+    def forward(self, x, bn=True):
+        if bn:
+            x = self.relu1_1(self.bn1_1(self.conv1_1(x)))
+            x = x + self.relu1_3(self.bn1_3(self.conv1_3(self.relu1_2(self.bn1_2(self.conv1_2(x))))))
 
-        x = self.relu2_1(self.conv2_1(x))
-        x = x + self.relu2_3(self.conv2_3(self.relu2_2(self.conv2_2(x))))
-        x = x + self.relu2_5(self.conv2_5(self.relu2_4(self.conv2_4(x))))
+            x = self.relu2_1(self.bn2_1(self.conv2_1(x)))
+            x = x + self.relu2_3(self.bn2_3(self.conv2_3(self.relu2_2(self.bn2_2(self.conv2_2(x))))))
+            x = x + self.relu2_5(self.bn2_5(self.conv2_5(self.relu2_4(self.bn2_4(self.conv2_4(x))))))
 
-        x = self.relu3_1(self.conv3_1(x) )
-        x = x + self.relu3_3(self.conv3_3(self.relu3_2(self.conv3_2(x))))
-        x = x + self.relu3_5(self.conv3_5(self.relu3_4(self.conv3_4(x))))
-        x = x + self.relu3_7(self.conv3_7(self.relu3_6(self.conv3_6(x))))
-        x = x + self.relu3_9(self.conv3_9(self.relu3_8(self.conv3_8(x))))
+            x = self.relu3_1(self.bn3_1(self.conv3_1(x)))
+            x = x + self.relu3_3(self.bn3_3(self.conv3_3(self.relu3_2(self.bn3_2(self.conv3_2(x))))))
+            x = x + self.relu3_5(self.bn3_3(self.conv3_5(self.relu3_4(self.bn3_4(self.conv3_4(x))))))
+            x = x + self.relu3_7(self.bn3_7(self.conv3_7(self.relu3_6(self.bn3_6(self.conv3_6(x))))))
+            x = x + self.relu3_9(self.bn3_9(self.conv3_9(self.relu3_8(self.bn3_8(self.conv3_8(x))))))
 
-        x = self.relu4_1(self.conv4_1(x) )
-        x = x + self.relu4_3(self.conv4_3(self.relu4_2(self.conv4_2(x) ) ) )
+            x = self.relu4_1(self.bn4_1(self.conv4_1(x)))
+            x = x + self.relu4_3(self.bn4_3(self.conv4_3(self.relu4_2(self.bn4_2(self.conv4_2(x))))))
 
-        x = x.view(x.size(0),-1)
-        x = self.fc5(x)
+            x = x.view(x.size(0), -1)
+            x = self.fc5(x)
+            x = self.bn_5(x)
+            # x = self.fc6(x)
+        else:
+            x = self.relu1_1(self.conv1_1(x))
+            x = x + self.relu1_3(self.conv1_3(self.relu1_2(self.conv1_2(x))))
+
+            x = self.relu2_1(self.conv2_1(x))
+            x = x + self.relu2_3(self.conv2_3(self.relu2_2(self.conv2_2(x))))
+            x = x + self.relu2_5(self.conv2_5(self.relu2_4(self.conv2_4(x))))
+
+            x = self.relu3_1(self.conv3_1(x) )
+            x = x + self.relu3_3(self.conv3_3(self.relu3_2(self.conv3_2(x))))
+            x = x + self.relu3_5(self.conv3_5(self.relu3_4(self.conv3_4(x))))
+            x = x + self.relu3_7(self.conv3_7(self.relu3_6(self.conv3_6(x))))
+            x = x + self.relu3_9(self.conv3_9(self.relu3_8(self.conv3_8(x))))
+
+            x = self.relu4_1(self.conv4_1(x) )
+            x = x + self.relu4_3(self.conv4_3(self.relu4_2(self.conv4_2(x) ) ) )
+
+            x = x.view(x.size(0),-1)
+            x = self.fc5(x)
 
         if self.feature:
             return x
 
-        x = self.fc6(x)
+        # x = self.fc6(x)
+        x = self.fc7(x)
         return x
+
+def main():
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model = faceNet()
+    model = model.to(device)
+
+
+    # check keras-like model summary using torchsummary
+    from torchsummary import summary
+    summary(model, input_size=(3, 112, 92))
+
+if __name__ == '__main__':
+    main()
