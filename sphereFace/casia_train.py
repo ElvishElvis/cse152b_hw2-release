@@ -13,7 +13,7 @@ import numpy as np
 from tensorboardX import SummaryWriter
 from utils.utils import getWriterPath
 from tqdm import tqdm
-
+import importlib
 
 parser = argparse.ArgumentParser()
 # The locationi of training set
@@ -31,6 +31,7 @@ parser.add_argument('--gpuId', type=int, default=0, help='gpu id used for traini
 parser.add_argument('--iterationDecreaseLR', type=int, nargs='+', default=[16000, 24000], help='the iteration to decrease learning rate')
 parser.add_argument('--iterationEnd', type=int, default=28000, help='the iteration to end training')
 parser.add_argument('--optimFunc', default='SGD', help='select the optmizer')
+parser.add_argument('--net','-n', default='faceNet', type=str)
 
 # The detail network setting
 opt = parser.parse_args()
@@ -54,7 +55,11 @@ imBatch = Variable(torch.FloatTensor(opt.batchSize, 3, opt.imHeight, opt.imWidth
 targetBatch = Variable(torch.LongTensor(opt.batchSize, 1) )
 
 # Initialize network
-net = faceNet.faceNet(m = opt.marginFactor, feature = False )
+# net = faceNet.faceNet(m = opt.marginFactor, feature = False )
+model = importlib.import_module(opt.net)
+net = getattr(model, 'faceNet')(m = opt.marginFactor, feature = False)
+# net = getattr(args.net, 'faceNet')()
+print("load net: ", opt.net)
 lossLayer = faceNet.CustomLoss()
 
 # Move network and containers to gpu
