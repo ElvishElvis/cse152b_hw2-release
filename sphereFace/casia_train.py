@@ -10,10 +10,7 @@ import faceNet
 import torch.nn as nn
 import os
 import numpy as np
-from tensorboardX import SummaryWriter
-from utils.utils import getWriterPath
-from tqdm import tqdm
-import importlib
+
 
 parser = argparse.ArgumentParser()
 # The locationi of training set
@@ -30,18 +27,10 @@ parser.add_argument('--noCuda', action='store_true', help='do not use cuda for t
 parser.add_argument('--gpuId', type=int, default=0, help='gpu id used for training the network')
 parser.add_argument('--iterationDecreaseLR', type=int, nargs='+', default=[16000, 24000], help='the iteration to decrease learning rate')
 parser.add_argument('--iterationEnd', type=int, default=28000, help='the iteration to end training')
-parser.add_argument('--optimFunc', default='SGD', help='select the optmizer')
-parser.add_argument('--net','-n', default='faceNet', type=str)
 
 # The detail network setting
 opt = parser.parse_args()
 print(opt)
-
-# init writer
-
-# resnet18 = models.resnet18(False)
-# writer = SummaryWriter()
-writer = SummaryWriter(getWriterPath(task=opt.experiment, date=True))
 
 # Save all the codes
 os.system('mkdir %s' % opt.experiment )
@@ -55,11 +44,7 @@ imBatch = Variable(torch.FloatTensor(opt.batchSize, 3, opt.imHeight, opt.imWidth
 targetBatch = Variable(torch.LongTensor(opt.batchSize, 1) )
 
 # Initialize network
-# net = faceNet.faceNet(m = opt.marginFactor, feature = False )
-model = importlib.import_module(opt.net)
-net = getattr(model, 'faceNet')(m = opt.marginFactor, feature = False)
-# net = getattr(args.net, 'faceNet')()
-print("load net: ", opt.net)
+net = faceNet.faceNet(m = opt.marginFactor, feature = False )
 lossLayer = faceNet.CustomLoss()
 
 # Move network and containers to gpu
@@ -69,15 +54,8 @@ if not opt.noCuda:
     net = net.cuda(opt.gpuId )
 
 # Initialize optimizer
-# opt_func = getattr(optim, opt.optimFunc)
-print("get optimizer: ", opt.optimFunc)
-# options = {'lr': opt.initLR, 'momentum': 0.9, 'weight_decay': 5e-4}
-# options = {'lr': opt.initLR, 'momentum': 0.9, 'weight_decay': 5e-4}
-# optimizer = opt_func(net.parameters(), **options)
-if opt.optimFunc == 'SGD':
-    optimizer = optim.SGD(net.parameters(), lr=opt.initLR, momentum=0.9, weight_decay=5e-4 )
-elif opt.optimFunc == 'Adam':
-    optimizer = optim.Adam(net.parameters(), lr=opt.initLR, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
+optimizer = optim.SGD(net.parameters(), lr=opt.initLR, momentum=0.9, weight_decay=5e-4 )
+
 # Initialize dataLoader
 faceDataset = dataLoader.BatchLoader(
         imageRoot = opt.imageRoot,
@@ -91,7 +69,7 @@ accuracyArr = []
 iteration = 0
 for epoch in range(0, opt.nepoch ):
     trainingLog = open('{0}/trainingLog_{1}.txt'.format(opt.experiment, epoch), 'w')
-    for i, dataBatch in tqdm(enumerate(faceLoader)):
+    for i, dataBatch in enumerate(faceLoader ):
         iteration += 1
 
         # Read data
@@ -142,12 +120,6 @@ for epoch in range(0, opt.nepoch ):
             np.save('%s/accuracy.npy' % opt.experiment, np.array(accuracyArr ) )
             torch.save(net.state_dict(), '%s/netFinal_%d.pth' % (opt.experiment, epoch+1) )
             break
-
-        ## add to tensorboard
-        from utils.utils import tb_scalar_dict
-        scalar_dict = {'loss': loss, 'accuracy': accuracy}
-
-        tb_scalar_dict(writer, scalar_dict, iteration, task='training')
 
     trainingLog.close()
 
