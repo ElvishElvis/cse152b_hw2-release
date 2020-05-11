@@ -112,8 +112,6 @@ class bodypose_model(nn.Module):
 
 
     def forward(self, x):
-        
-        print(x.shape)
 
         outs_list = []
 
@@ -123,13 +121,9 @@ class bodypose_model(nn.Module):
         out1_2 = self.model1_2(out1)
         out2 = torch.cat([out1_1, out1_2, out1], 1)
 
-        print(out1_1.shape, out1_2.shape, out1.shape)
-
         out2_1 = self.model2_1(out2)
         out2_2 = self.model2_2(out2)
         out3 = torch.cat([out2_1, out2_2, out1], 1)
-
-        print(out2_1.shape, out2_2.shape, out1.shape)
 
         out3_1 = self.model3_1(out3)
         out3_2 = self.model3_2(out3)
@@ -143,12 +137,8 @@ class bodypose_model(nn.Module):
         out5_2 = self.model5_2(out5)
         out6 = torch.cat([out5_1, out5_2, out1], 1)
 
-        print(out5_1.shape, out5_2.shape, out1.shape)
-
         out6_1 = self.model6_1(out6)
         out6_2 = self.model6_2(out6)
-
-        print(out6_1.shape, out6_2.shape)
 
         return out6_1, out6_2, [out1_2, out2_2, out3_2, out4_2, out5_2, out6_2]
 

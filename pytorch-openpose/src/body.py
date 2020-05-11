@@ -38,7 +38,7 @@ class Body(object):
         self.multi_scale = False
 
     def __call__(self, oriImg):
-        if multi_scale = True:
+        if self.multi_scale == True:
             scale_search = [0.5, 1.0, 1.5, 2.0]
         else:
             scale_search = [0.5]
@@ -60,8 +60,6 @@ class Body(object):
             im = np.transpose(np.float32(imageToTest_padded[:, :, :, np.newaxis]), (3, 2, 0, 1)) / 256 - 0.5
             im = np.ascontiguousarray(im)
 
-            print('---im.shape', im.shape)
-
             data = torch.from_numpy(im).float()
             if torch.cuda.is_available():
                 data = data.cuda()
@@ -74,13 +72,9 @@ class Body(object):
             # extract outputs, resize, and remove padding
             # heatmap = np.transpose(np.squeeze(net.blobs[output_blobs.keys()[1]].data), (1, 2, 0))  # output 1 is heatmaps
             heatmap = np.transpose(np.squeeze(Mconv7_stage6_L2), (1, 2, 0))  # output 1 is heatmaps
-            print('---heatmap.shape', heatmap.shape)
             heatmap = cv2.resize(heatmap, (0, 0), fx=stride, fy=stride, interpolation=cv2.INTER_CUBIC)
-            print('---heatmap.shape', heatmap.shape)
             heatmap = heatmap[:imageToTest_padded.shape[0] - pad[2], :imageToTest_padded.shape[1] - pad[3], :]
-            print('---heatmap.shape', heatmap.shape)
             heatmap = cv2.resize(heatmap, (oriImg.shape[1], oriImg.shape[0]), interpolation=cv2.INTER_CUBIC)
-            print('---heatmap.shape', heatmap.shape)
 
             heatmap_list_converted = to_heatmaps(heatmap_list, stride, imageToTest_padded, pad, oriImg)
             heatmap_list_converted_list.append(heatmap_list_converted)
