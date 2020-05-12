@@ -15,7 +15,7 @@
 
 ### Steps to access and complete homework
 - Clone the homework repository
-    - ``git clone https://github.com/eric-yyjau/cse252c_hw2_release.git``
+    - ``git clone https://github.com/Jerrypiglet/cse152b_hw2-release.git``
 - The homework is in the Jupyter Notebook ``hw2_questions.ipynb``
 - Follow the README (this file) for installation, data and compute instructions.
 
