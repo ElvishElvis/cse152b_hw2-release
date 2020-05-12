@@ -1,6 +1,3 @@
-import sys
-sys.path.insert(0, '/home/yyjau/Documents/CSE252C_advanced_computer_vision/hw/hw2/cosFace')
-
 import torch
 from torch.autograd import Variable
 torch.backends.cudnn.bencmark = True
@@ -10,13 +7,11 @@ import os.path as osp
 from PIL import Image
 from matlab_cp2tform import get_similarity_transform_for_PIL
 import faceNet
-from tqdm import tqdm
 
 def alignment(src_img, src_pts):
-    crop_size = (96, 112)
-
     ref_pts = [ [30.2946, 51.6963],[65.5318, 51.5014],
         [48.0252, 71.7366],[33.5493, 92.3655],[62.7299, 92.2041] ]
+    crop_size = (96, 112)
     src_pts = np.array(src_pts).reshape(5,2)
 
     s = np.array(src_pts).astype(np.float32)
@@ -30,20 +25,16 @@ def alignment(src_img, src_pts):
 
     return face_img
 
-
-# import matplotlib.pyplot as plt
-# plt.imshow(face_img)
-
 def cropping(src_img ):
     # IMPLEMENT cropping the center of image
-    crop_size = (96, 112)
-    face_img = np.asarray(src_img)[:, :, ::-1]
-    (H, W) = (face_img.shape[0], face_img.shape[1])
-    (Hs, Ws) = (H//2-crop_size[1]//2, W//2-crop_size[0]//2)
-    face_img = face_img[Hs:Hs+crop_size[1], Ws:Ws+crop_size[0]]
-    return face_img
-    pass
 
+
+
+
+
+
+
+    return src_img
 
 def KFold(n=6000, n_folds=10, shuffle=False):
     folds = []
@@ -84,14 +75,8 @@ parser.add_argument('--model','-m', default='./model/sphere20a_20171020.pth', ty
 args = parser.parse_args()
 
 predicts=[]
-# net = getattr(faceNet, args.net)()
-import importlib
-model = importlib.import_module(args.net)
-net = getattr(model, 'faceNet')()
-# net = getattr(args.net, 'faceNet')()
-print("load net: ", args.net)
+net = getattr(faceNet, args.net)()
 net.load_state_dict(torch.load(args.model) )
-print("load model: ", args.model)
 net.cuda()
 net.eval()
 net.feature = True
@@ -113,8 +98,8 @@ with open('data/pairs.txt') as f:
     pairs_lines = f.readlines()[1:]
 
 pairNum = len(pairs_lines )
-for i in tqdm(range(pairNum )):
-    # print('Process %d/%d' % (i, pairNum ) )
+for i in range(pairNum ):
+    print('Process %d/%d' % (i, pairNum ) )
     p = pairs_lines[i].replace('\n','').split('\t')
 
     if 3==len(p):

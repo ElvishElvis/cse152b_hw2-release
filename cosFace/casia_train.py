@@ -1,6 +1,3 @@
-import sys
-sys.path.insert(0, '/home/yyjau/Documents/CSE252C_advanced_computer_vision/hw/hw2/')
-
 import torch
 from torch.autograd import Variable
 import torch.functional as F
@@ -13,16 +10,6 @@ import faceNet
 import torch.nn as nn
 import os
 import numpy as np
-
-## modules
-from tensorboardX import SummaryWriter
-from utils.utils import getWriterPath
-from utils.utils import save_model
-
-from tqdm import tqdm
-
-
-
 
 
 parser = argparse.ArgumentParser()
@@ -42,16 +29,10 @@ parser.add_argument('--gpuId', type=int, default=0, help='gpu id used for traini
 parser.add_argument('--iterationDecreaseLR', type=int, nargs='+', default=[16000, 24000], help='the iteration to decrease learning rate')
 parser.add_argument('--iterationEnd', type=int, default=28000, help='the iteration to end training')
 
-# load pretrained
-parser.add_argument('--pretrained', default=None, help='path to load pretrained model')
-
-
 # The detail network setting
 opt = parser.parse_args()
 print(opt)
 
-# writer = SummaryWriter()
-writer = SummaryWriter(getWriterPath(task=opt.experiment, date=True))
 # Save all the codes
 os.system('mkdir %s' % opt.experiment )
 os.system('cp *.py %s' % opt.experiment )
@@ -64,33 +45,17 @@ imBatch = Variable(torch.FloatTensor(opt.batchSize, 3, opt.imHeight, opt.imWidth
 targetBatch = Variable(torch.LongTensor(opt.batchSize, 1) )
 
 # Initialize network
-net = faceNet.faceNet(feature=False) # del feature
-checkpoint = None
-if opt.pretrained is not None:
-    from utils.utils import load_checkpoint
-    checkpoint = load_checkpoint(opt.pretrained)
-    net.load_state_dict(checkpoint['model_state_dict'])
-    net.train()
-    print("load states: ", opt.pretrained)
-
-lossLayer = faceNet.CustomLoss(s = opt.scaleFactor, m = opt.marginFactor)
+net = faceNet.faceNet(m = opt.marginFactor, feature = False )
+lossLayer = faceNet.CustomLoss(s = opt.scaleFactor )
 
 # Move network and containers to gpu
 if not opt.noCuda:
     imBatch = imBatch.cuda(opt.gpuId )
     targetBatch = targetBatch.cuda(opt.gpuId )
     net = net.cuda(opt.gpuId )
-    lossLayer = lossLayer.cuda(opt.gpuId )
 
 # Initialize optimizer
 optimizer = optim.SGD(net.parameters(), lr=opt.initLR, momentum=0.9, weight_decay=5e-4 )
-print("get optimizer: ", optimizer)
-if checkpoint is not None:
-    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-    print("load optimizer!")
-    print('iter', checkpoint['iter'])
-    print('loss ', checkpoint['loss'])
-
 
 # Initialize dataLoader
 faceDataset = dataLoader.BatchLoader(
@@ -99,16 +64,13 @@ faceDataset = dataLoader.BatchLoader(
         cropSize = (opt.imWidth, opt.imHeight )
         )
 faceLoader = DataLoader(faceDataset, batch_size = opt.batchSize, num_workers = 16, shuffle = False )
-from utils.utils import datasize
-datasize(faceLoader, opt.batchSize, tag='train')
 
 lossArr = []
 accuracyArr = []
 iteration = 0
-iter_print_loss = 100
-for epoch in tqdm(range(0, opt.nepoch )):
+for epoch in range(0, opt.nepoch ):
     trainingLog = open('{0}/trainingLog_{1}.txt'.format(opt.experiment, epoch), 'w')
-    for i, dataBatch in tqdm(enumerate(faceLoader)):
+    for i, dataBatch in enumerate(faceLoader ):
         iteration += 1
 
         # Read data
@@ -124,7 +86,6 @@ for epoch in tqdm(range(0, opt.nepoch )):
         optimizer.zero_grad()
 
         pred = net(imBatch )
-        # print("pred: ", pred)
         loss, accuracy = lossLayer(pred, targetBatch )
         loss.backward()
 
@@ -141,9 +102,8 @@ for epoch in tqdm(range(0, opt.nepoch )):
             meanLoss = np.mean(np.array(lossArr[:] ) )
             meanAccuracy = np.mean(np.array(accuracyArr[:] ) )
 
-        if iteration % iter_print_loss == 0:
-            print('Epoch %d iteration %d: Loss %.5f Accumulated Loss %.5f' % (epoch, iteration, lossArr[-1], meanLoss ) )
-            print('Epoch %d iteration %d: Accura %.5f Accumulated Accura %.5f' % (epoch, iteration, accuracyArr[-1], meanAccuracy ) )
+        print('Epoch %d iteration %d: Loss %.5f Accumulated Loss %.5f' % (epoch, iteration, lossArr[-1], meanLoss ) )
+        print('Epoch %d iteration %d: Accura %.5f Accumulated Accura %.5f' % (epoch, iteration, accuracyArr[-1], meanAccuracy ) )
         trainingLog.write('Epoch %d iteration %d: Loss %.5f Accumulated Loss %.5f \n' % (epoch, iteration, lossArr[-1], meanLoss ) )
         trainingLog.write('Epoch %d iteration %d: Accura %.5f Accumulated Accura %.5f\n' % (epoch, iteration, accuracyArr[-1], meanAccuracy ) )
         if iteration == 1:
@@ -159,20 +119,7 @@ for epoch in tqdm(range(0, opt.nepoch )):
             np.save('%s/loss.npy' % opt.experiment, np.array(lossArr ) )
             np.save('%s/accuracy.npy' % opt.experiment, np.array(accuracyArr ) )
             torch.save(net.state_dict(), '%s/netFinal_%d.pth' % (opt.experiment, epoch+1) )
-            save_model('%s/net_checkpoint_%d.tar' % (opt.experiment, epoch+1), iteration, net, optimizer, loss)
             break
-
-        ## add to tensorboard
-        from utils.utils import tb_scalar_dict
-        scalar_dict = {'loss': loss, 'accuracy': accuracy}
-
-        tb_scalar_dict(writer, scalar_dict, iteration, task='training')
-
-    # save for every epoch
-    np.save('%s/loss.npy' % opt.experiment, np.array(lossArr ) )
-    np.save('%s/accuracy.npy' % opt.experiment, np.array(accuracyArr ) )
-    torch.save(net.state_dict(), '%s/netFinal_%d.pth' % (opt.experiment, epoch+1) )
-    save_model('%s/net_checkpoint_%d.tar' % (opt.experiment, epoch+1), iteration, net, optimizer, loss)
 
     trainingLog.close()
 
