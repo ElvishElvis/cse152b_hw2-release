@@ -53,7 +53,7 @@
 
     
 ### 2. Pull the repo and install dependencies
-- ``git clone https://github.com/eric-yyjau/cse252c_hw1.git``
+- In the homework base directory
 - Install dependencies (Python 3.X with Pip)
     - ``pip install -r requirements.txt --user``
 - Compile and install `pyviso` for the SfM question
