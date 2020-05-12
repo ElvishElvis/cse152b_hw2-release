@@ -1,4 +1,4 @@
-# CSE252C HW2
+# CSE152B HW2
 ## 0. Homework instructions
 
 1. Attempt all questions.
