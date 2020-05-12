@@ -23,10 +23,6 @@
 ### 1. Set up the environment
 #### 1. [Option 1] On your own machine
 - (local) SSH into your machine
-- Install SWIG
-    - On Ubuntu: `sudo apt-get install swig` (sudo required)
-    - On MacOS: `brew install swig`
-        - You need to install Homebrew first with [HomeBrew](https://brew.sh/)
 - Install Python 3.X and Pip
 - [Recommended] Create an environment (e.g. with [Anaconda](https://docs.conda.io/en/latest/miniconda.html))
     - ``conda create --name py36 python=3.6 pip``
@@ -56,9 +52,6 @@
 - In the homework base directory
 - Install dependencies (Python 3.X with Pip)
     - ``pip install -r requirements.txt --user``
-- Compile and install `pyviso` for the SfM question
-    - ``cd pyviso/src/``
-    - ``pip install -e . --user``
 
 ## 2. Data
 On the ``ieng6.ucsd.edu`` server, the datasets are located at
@@ -75,7 +68,7 @@ Or from within server if your local machine has a fixed address or IP:
 ``scp -r {REMOTE PATH TO THE vis FOLDER} <USERNAME>@<LOCAL ADDRESS>:{YOUR LOCAL PATH}``
 
 
-## 3. [Extra] How to run training sessions
+## 3. How to run training sessions
 
 ### 1. Set up the environment
 
