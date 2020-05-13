@@ -61,7 +61,7 @@ To fetch the files you can use commands like `scp` to transfer files from the cl
 
 From your local machine: 
 
-``scp -r <USERNAME>@dsmlp-login.ucsd.edu:/datasets/home/53/253/cs152sp20ta1/pyviso2/vis {LOCAL PATH}``
+``scp -r <USERNAME>@dsmlp-login.ucsd.edu:/datasets/cse152-252-sp20-public/hw2_data/lfw {LOCAL PATH}``
 
 Or from within server if your local machine has a fixed address or IP:
 
